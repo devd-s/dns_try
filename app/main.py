@@ -50,7 +50,7 @@ def main():
             header = dns_header(transaction_id=1234, answers=1)
             answer = build_answer(ip_address="8.8.8.8")
             #response = dns_header(tid) + question
-            response = header + question + response
+            response = header + question + answer
             print (response)
     
             udp_socket.sendto(response, source)
