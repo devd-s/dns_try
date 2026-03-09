@@ -42,11 +42,15 @@ def main():
             # High Byte The most significant leftbyte (leftmost)
             # Low Byte The most significant byte (rightmost)
             tid = struct.unpack("!H", buf[0:2])[0]
-            request_flags = struct.unpack("!H", buf[2:4])[0]
+            request_flags = struct.unpack("!H", buf[2:4])[0] # extract query flags
             question = buf[12:]
 
+            # extracting rdbit from query flags
+            rbbit_val= request_flags & 0x0100
+            response_flag = RESPONSE | rbbit_val
             #response = b"\x04\xd2\x80" + (b"\x00" * 9)
-            header = dns_header(tid, answers=1)
+            
+            header = dns_header(tid,flags=response_flag, answers=1)
             answer = build_answer(ip_address="8.8.8.8")
             #response = dns_header(tid) + question
             response = header + question + answer
