@@ -18,7 +18,7 @@ def build_answer(name: bytes=b"\xc0\x0c", _type: int=1, _class: int=1, ttl:int =
         name +
         struct.pack("!H", _type) +
         struct.pack("!H", _class) +
-        struct.pack("!H", ttl) +
+        struct.pack("!I", ttl) +
         struct.pack("!H", rlen) +
         rdata
     )
