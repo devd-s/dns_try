@@ -48,6 +48,7 @@ def main():
             # extracting rdbit from query flags
             rbbit_val= request_flags & 0x0100
             opcode_val = request_flags & 0x7800
+            rcode_val = request_flags & 0x000F
             response_flag = RESPONSE | opcode_val |rbbit_val
             #response = b"\x04\xd2\x80" + (b"\x00" * 9)
             
