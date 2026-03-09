@@ -24,8 +24,6 @@ def build_answer(name: bytes=b"\xc0\x0c", _type: int=1, _class: int=1, ttl:int =
     )
 
 
-
-
 def main():
     # You can use print statements as follows for debugging, they'll be visible when running tests.
     print("Logs from your program will appear here!")
@@ -43,11 +41,11 @@ def main():
             # flag (high byte) : x80
             # High Byte The most significant leftbyte (leftmost)
             # Low Byte The most significant byte (rightmost)
-            #tid = struct.unpack("!H", buf[0:2])[0]
+            tid = struct.unpack("!H", buf[0:2])[0]
             question = buf[12:]
 
             #response = b"\x04\xd2\x80" + (b"\x00" * 9)
-            header = dns_header(transaction_id=1234, answers=1)
+            header = dns_header(tid, answers=1)
             answer = build_answer(ip_address="8.8.8.8")
             #response = dns_header(tid) + question
             response = header + question + answer
