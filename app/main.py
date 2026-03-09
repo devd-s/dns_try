@@ -42,6 +42,7 @@ def main():
             # High Byte The most significant leftbyte (leftmost)
             # Low Byte The most significant byte (rightmost)
             tid = struct.unpack("!H", buf[0:2])[0]
+            request_flags = struct.unpack("!H", buf[2:4])[0]
             question = buf[12:]
 
             #response = b"\x04\xd2\x80" + (b"\x00" * 9)
