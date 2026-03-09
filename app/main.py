@@ -47,7 +47,8 @@ def main():
 
             # extracting rdbit from query flags
             rbbit_val= request_flags & 0x0100
-            response_flag = RESPONSE | rbbit_val
+            opcode_val = request_flags & 0x7800
+            response_flag = RESPONSE | opcode_val |rbbit_val
             #response = b"\x04\xd2\x80" + (b"\x00" * 9)
             
             header = dns_header(tid,flags=response_flag, answers=1)
