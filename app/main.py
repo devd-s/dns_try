@@ -50,6 +50,13 @@ def main():
             opcode_val = request_flags & 0x7800
             rcode_val = request_flags & 0x000F
             response_flag = RESPONSE | opcode_val |rbbit_val
+
+            if opcode_val != 0:
+                rcode_val = 0x0004
+            else:
+                rcode_val = 0x0000
+
+            response_flag = RESPONSE | opcode_val |rbbit_val | rcode_val
             #response = b"\x04\xd2\x80" + (b"\x00" * 9)
             
             header = dns_header(tid,flags=response_flag, answers=1)
