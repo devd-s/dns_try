@@ -161,8 +161,8 @@ def main():
                 print(f"    A{i+1}: {q['domain']} → {ip}")
             
 
-            header = dns_header(tid,flags=response_flag, answers=1)
-            answer = build_answer(ip_address="8.8.8.8")
+            #header = dns_header(tid,flags=response_flag, answers=1)
+            #answer = build_answer(ip_address="8.8.8.8")
             #response = dns_header(tid) + question
             response = header + question_section + answer_section
             print (response)
