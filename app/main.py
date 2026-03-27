@@ -43,7 +43,7 @@ def parse_domain_name(data: bytes, offset: int) -> tuple:
             if not jumped:
                 jump_pos = position +2
 
-            pointer = struct.unpack("!H!", data[position:position+2])[0]
+            pointer = struct.unpack("!H", data[position:position+2])[0]
 
             pointer = pointer & 0x3FFF
 
@@ -141,7 +141,7 @@ def main():
             for i in range(qdcount):
                 question = parsing_question(buf, offset)
                 questions.append(question)
-                print(f"    Q{i+1}: {question['domain']}")
+                print(f"    Q{i+1}: {question['domain_name']}")
                 offset += question["bytes_read"]
 
             # building dns header
@@ -156,7 +156,7 @@ def main():
 
             for i, q in enumerate(questions):
                 ip = ip_addresses[i % len(ip_addresses)]
-                abswer_section += build_answer(question["domain_name"], question["query_type"], question["query_class"],ip_address=ip)
+                answer_section += build_answer(question["domain_name"], question["query_type"], question["query_class"],ip_address=ip)
 
                 print(f"    A{i+1}: {q['domain']} → {ip}")
             
