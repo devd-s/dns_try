@@ -61,7 +61,7 @@ def parse_domain_name(data: bytes, offset: int) -> tuple:
         labels.append(label)
         position += length
 
-        domain_name = ".".join(labesl)
+        domain_name = ".".join(labels)
     
     if jumped:
         bytes_read = jump_pos - offset
