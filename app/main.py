@@ -10,13 +10,13 @@ def dns_header(transaction_id: int, flags: int = RESPONSE, questions: int = 1, a
 def build_answer(domain_name: str, _type: int=1, _class: int=1, ttl:int = 60, ip_address: str="8.8.8.8") -> bytes:
 #def build_answer(domain_name: bytes=b"\xc0\x0c", _type: int=1, _class: int=1, ttl:int = 60, ip_address: str="8.8.8.8") -> bytes:
     #name : 2 bytes
-
+    name = encode_domain_name(domain_name)
     rdata = bytes(map(int, ip_address.split('.')))
 
     rlen=len(rdata)
 
     return (
-        domain_name +
+        name +
         struct.pack("!H", _type) +
         struct.pack("!H", _class) +
         struct.pack("!I", ttl) +
