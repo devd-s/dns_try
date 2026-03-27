@@ -159,7 +159,7 @@ def main():
                 ip = ip_addresses[i % len(ip_addresses)]
                 answer_section += build_answer(q["domain_name"], q["query_type"], q["query_class"],ip_address=ip)
 
-                print(f"    A{i+1}: {q['domain']} → {ip}")
+                print(f"    A{i+1}: {q['domain_name']} → {ip}")
             
 
             #header = dns_header(tid,flags=response_flag, answers=1)
