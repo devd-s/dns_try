@@ -7,7 +7,8 @@ NXDOMAIN = 0x8003
 def dns_header(transaction_id: int, flags: int = RESPONSE, questions: int = 1, answers: int = 0, authority: int = 0, additional: int = 0) -> bytes:
     return struct.pack("!HHHHHH", transaction_id,flags,questions,answers,authority,additional)
 
-def build_answer(name: bytes=b"\xc0\x0c", _type: int=1, _class: int=1, ttl:int = 60, ip_address: str="8.8.8.8") -> bytes:
+def build_answer(domain_name: str, _type: int=1, _class: int=1, ttl:int = 60, ip_address: str="8.8.8.8") -> bytes:
+#def build_answer(domain_name: bytes=b"\xc0\x0c", _type: int=1, _class: int=1, ttl:int = 60, ip_address: str="8.8.8.8") -> bytes:
     #name : 2 bytes
 
     rdata = bytes(map(int, ip_address.split('.')))
@@ -156,7 +157,7 @@ def main():
 
             for i, q in enumerate(questions):
                 ip = ip_addresses[i % len(ip_addresses)]
-                answer_section += build_answer(question["domain_name"], question["query_type"], question["query_class"],ip_address=ip)
+                answer_section += build_answer(q["domain_name"], q["query_type"], q["query_class"],ip_address=ip)
 
                 print(f"    A{i+1}: {q['domain']} → {ip}")
             
