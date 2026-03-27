@@ -16,7 +16,7 @@ def build_answer(domain_name: str, _type: int=1, _class: int=1, ttl:int = 60, ip
     rlen=len(rdata)
 
     return (
-        name +
+        domain_name +
         struct.pack("!H", _type) +
         struct.pack("!H", _class) +
         struct.pack("!I", ttl) +
