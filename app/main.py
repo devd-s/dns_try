@@ -28,7 +28,7 @@ def build_answer(domain_name: str, atype: int=1, aclass: int=1, ttl:int = 60, rd
 
 def create_query_resolver(question: dict, transaction_id: int) -> bytes:
     header = dns_header(transaction_id, flags=0x0100)
-    question_section = build_question(question["domain_name", question["query_type"], question["query_class"]])
+    question_section = build_question(question["domain_name"], question["query_type"], question["query_class"])
 
     return header + question_section
 
