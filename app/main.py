@@ -1,5 +1,6 @@
 import socket
 import struct
+import sys
 
 RESPONSE = 0x8000
 NXDOMAIN = 0x8003
@@ -7,22 +8,29 @@ NXDOMAIN = 0x8003
 def dns_header(transaction_id: int, flags: int = RESPONSE, questions: int = 1, answers: int = 0, authority: int = 0, additional: int = 0) -> bytes:
     return struct.pack("!HHHHHH", transaction_id,flags,questions,answers,authority,additional)
 
-def build_answer(domain_name: str, _type: int=1, _class: int=1, ttl:int = 60, ip_address: str="8.8.8.8") -> bytes:
+def build_answer(domain_name: str, atype: int=1, aclass: int=1, ttl:int = 60, rdata: bytes=b"") -> bytes:
+#def build_answer(domain_name: str, _type: int=1, _class: int=1, ttl:int = 60, ip_address: str="8.8.8.8") -> bytes:
 #def build_answer(domain_name: bytes=b"\xc0\x0c", _type: int=1, _class: int=1, ttl:int = 60, ip_address: str="8.8.8.8") -> bytes:
     #name : 2 bytes
     name = encode_domain_name(domain_name)
-    rdata = bytes(map(int, ip_address.split('.')))
+    #rdata = bytes(map(int, ip_address.split('.')))
 
-    rlen=len(rdata)
+    #rlen=len(rdata)
 
     return (
         name +
-        struct.pack("!H", _type) +
-        struct.pack("!H", _class) +
+        struct.pack("!H", atype) +
+        struct.pack("!H", aclass) +
         struct.pack("!I", ttl) +
-        struct.pack("!H", rlen) +
+        struct.pack("!H", len(rdata)) +
         rdata
     )
+
+def create_query_resolver(question: dict, transaction_id: int) -> bytes:
+    header = dns_header(transaction_id, flags=0x0100)
+    question_section = build_question(question["domain_name", question["query_type"], question["query_class"]])
+
+    return header + question_section
 
 def parse_domain_name(data: bytes, offset: int) -> tuple:
     """ Parses a domain name from the given data starting at the specified offset. Returns a tuple containing the domain name and the number of bytes read. """
@@ -96,6 +104,57 @@ def parsing_question(data: bytes, offset: int) -> dict:
         "bytes_read": name_length + 4
     }
 
+def resolver_forwarder(question: dict, resolver_address: tuple) -> bytes:
+    resolver_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    resolver_socket.settimeout(5)
+
+    try:
+        query = create_query_resolver(question, transaction_id=1234)
+
+        resolver_socket.sendto(query, resolver_address)
+        response, _ = resolver_socket.recvfrom(512)
+        offset = 12
+        _, question_bytes = parse_domain_name(response, offset)
+        offset += question_bytes + 4 # 4 bytes skip qtype and class
+
+        # parsing answer section
+        ancount = struct.unpack("!H", response[6:8])[0]
+
+        if ancount > 0:
+            answer = parse_answer (response, offset)
+            return answer
+        else: 
+            return None
+        
+    except Exception as e:
+        print(f"Error forwarding query to resolver: {e}")
+        return None
+    finally:
+        resolver_socket.close()
+
+def parse_answer(data: bytes, offset: int) -> dict:
+    domain_name , name_length = parse_domain_name(data, offset)
+    position = offset + name_length
+
+    # Extracting the query type, class, TTL, and RDLENGTH
+    answer_type = struct.unpack("!H", data[position: position+2])[0]
+    answer_class = struct.unpack("!H", data[position+2:position+4])[0]
+    ttl = struct.unpack("!H", data[position+4:position+8])[0]
+    rdlength = struct.unpack("!H", data[position+8:position+10])[0]
+    rdata = data[position+10:position+10+rdlength]
+
+    return {
+        "domain_name": domain_name,
+        "answer_type": answer_type,
+        "answer_class": answer_class,
+        "ttl": ttl,
+        "rdlength": rdlength,
+        "rdata": rdata,
+        "bytes_read": name_length + 10 + rdlength
+    }
+
+
+
 def build_question(domain_name: str, query_type: int=1, query_class: int = 1) -> bytes:
     qname = encode_domain_name(domain_name)
     return qname + (struct.pack("!HH", query_type, query_class))
@@ -103,6 +162,14 @@ def build_question(domain_name: str, query_type: int=1, query_class: int = 1) ->
 def main():
     # You can use print statements as follows for debugging, they'll be visible when running tests.
     print("Logs from your program will appear here!")
+
+    if sys.argv[1] != "--resolver":
+        print("Usage: ./your_server --resolver <ip>:<port>")
+        sys.exit(1)
+
+    resolver_arg = sys.argv[2]
+    resolver_ip, resolver_port = resolver_arg.split(":")
+    resolver_address = (resolver_ip, int(resolver_port))
     
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     udp_socket.bind(("127.0.0.1", 2053))
@@ -145,6 +212,12 @@ def main():
                 print(f"    Q{i+1}: {question['domain_name']}")
                 offset += question["bytes_read"]
 
+            answers = []
+            for i, question in enumerate(questions):
+                answer = resolver_forwarder(question, resolver_address)
+                if answer:
+                    answers.append(answer)
+
             # building dns header
             header = dns_header(tid, flags=response_flag, questions=qdcount, answers=qdcount)
 
@@ -153,13 +226,16 @@ def main():
                 question_section += build_question(question["domain_name"], question["query_type"], question["query_class"])
 
             answer_section = b""
-            ip_addresses = ["8.8.8.8", "8.8.4.4"]
+            # ip_addresses = ["8.8.8.8", "8.8.4.4"]
 
-            for i, q in enumerate(questions):
-                ip = ip_addresses[i % len(ip_addresses)]
-                answer_section += build_answer(q["domain_name"], q["query_type"], q["query_class"],ip_address=ip)
+            # for i, q in enumerate(questions):
+            #     ip = ip_addresses[i % len(ip_addresses)]
+            #     answer_section += build_answer(q["domain_name"], q["query_type"], q["query_class"],ip_address=ip)
 
-                print(f"    A{i+1}: {q['domain_name']} → {ip}")
+            #     print(f"    A{i+1}: {q['domain_name']} → {ip}")
+            
+            for answer in answers:
+                answer_section = build_answer(answer["domain_name"], answer["answer_type"], answer["answer_class"], answer["ttl"], answer["rdata"])
             
 
             #header = dns_header(tid,flags=response_flag, answers=1)
