@@ -139,7 +139,7 @@ def parse_answer(data: bytes, offset: int) -> dict:
     # Extracting the query type, class, TTL, and RDLENGTH
     answer_type = struct.unpack("!H", data[position: position+2])[0]
     answer_class = struct.unpack("!H", data[position+2:position+4])[0]
-    ttl = struct.unpack("!H", data[position+4:position+8])[0]
+    ttl = struct.unpack("!I", data[position+4:position+8])[0]
     rdlength = struct.unpack("!H", data[position+8:position+10])[0]
     rdata = data[position+10:position+10+rdlength]
 
@@ -219,7 +219,7 @@ def main():
                     answers.append(answer)
 
             # building dns header
-            header = dns_header(tid, flags=response_flag, questions=qdcount, answers=qdcount)
+            header = dns_header(tid, flags=response_flag, questions=qdcount, answers=len(answers))
 
             question_section = b""
             for question in questions:
@@ -235,7 +235,7 @@ def main():
             #     print(f"    A{i+1}: {q['domain_name']} → {ip}")
             
             for answer in answers:
-                answer_section = build_answer(answer["domain_name"], answer["answer_type"], answer["answer_class"], answer["ttl"], answer["rdata"])
+                answer_section += build_answer(answer["domain_name"], answer["answer_type"], answer["answer_class"], answer["ttl"], answer["rdata"])
             
 
             #header = dns_header(tid,flags=response_flag, answers=1)
